@@ -1,6 +1,6 @@
-# [Project name]
+# FarmEye AI
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An AI-powered farming companion for crop health, weather awareness, practical farming guidance, farm expenses, and crop records.
 
 ## Run & Operate
 
@@ -22,19 +22,25 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/farmeye-ai/` — FarmEye AI React web application.
+- `artifacts/farmeye-ai/src/` — application routes, reusable UI, and styles.
+- `artifacts/api-server/` and `lib/api-spec/` — shared API foundation, available for future connected services.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Initial farmer-facing data is demo data and is stored in the browser; no AI, weather, or Supabase service is connected.
+- Keep integration points behind data adapters so future services can replace demo providers without tying UI components directly to vendors.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+FarmEye AI gives farmers one place to review their crops and field conditions, explore preliminary crop-health guidance, ask farming questions, track expenses, and revisit crop history.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Use a professional, modern agricultural visual identity and make the interface work well on phones.
+- Be transparent that crop analysis is preliminary and not a replacement for agricultural expert advice.
+- Do not claim AI diagnosis is completely accurate.
+- Do not use paid services; keep disconnected APIs represented by mock data.
 
 ## Gotchas
 

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "FarmEye AI"
+description = "An AI-powered farming companion with a crop health workspace, field weather intelligence, farming assistant, expense tracking, and crop history."
+version = "1.0.0"
+id = "artifacts/farmeye-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18254
+
+[services.development]
+run = "pnpm --filter @workspace/farmeye-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/farmeye-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/farmeye-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18254"
+BASE_PATH = "/"
