@@ -1,4 +1,6 @@
 export type Analysis = { id:string; cropName:string; issue:string; confidence:number; severity:string; nextSteps:string[]; createdAt:string; preliminary:boolean; image?:string };
+export type CropAnalysisRequest = { cropName:string; image:File };
+export interface CropAnalysisProvider { analyze(request:CropAnalysisRequest):Promise<Analysis> }
 export type Crop = { id:string; name:string; variety:string; plantedAt:string; area:string; status:string; image?:string; latestAnalysis?:Analysis };
 export type Expense = { id:string; category:string; description:string; amount:number; date:string };
 export type ChatMessage = { id:string; role:'user'|'assistant'; text:string; createdAt:string };
@@ -14,7 +16,7 @@ const sampleReport:Analysis={
  cropName:'Tomato',
  issue:'Possible leaf spot pattern',
  confidence:68,
- severity:'Monitor',
+ severity:'Medium',
  nextSteps:['Check lower leaves for changes over the next few days.','Note whether spots spread after rain or overhead watering.','Ask a local agriculture expert before choosing a treatment.'],
  createdAt:`${localDateString(-8)}T09:30:00.000Z`,
  preliminary:true
@@ -59,10 +61,53 @@ export function writeFarm(data:FarmData):boolean {
   return true;
  } catch { return false; }
 }
-export const demoAdapters={
- analyze(cropName:string):Analysis {
-  return {id:crypto.randomUUID(),cropName,issue:'Possible early blight pattern',confidence:72,severity:'Watch closely',nextSteps:['Check lower leaves for dark spots with yellow edges.','Avoid overhead watering; keep foliage dry where possible.','Take another photo in 2–3 days and compare changes.'],createdAt:new Date().toISOString(),preliminary:true};
+const cropDemoResults:Record<string,Omit<Analysis,'id'|'cropName'|'createdAt'|'preliminary'|'image'>>={
+ tomato:{
+  issue:'Possible early blight pattern',
+  confidence:72,
+  severity:'Medium',
+  nextSteps:['Check lower leaves for dark spots with yellow edges and watch whether they spread.','Keep foliage dry where practical and note recent rain or overhead watering.','Compare a new photo in a few days; confirm with a local crop specialist before treatment.']
  },
+ rice:{
+  issue:'Possible rice blast-like leaf lesions',
+  confidence:69,
+  severity:'Medium',
+  nextSteps:['Look for elongated lesions with pale centres on several plants; other causes can look similar.','Take a clear close-up and note the variety, crop stage, and recent field conditions.','Ask a local agriculture expert before applying fungicide or changing water management.']
+ },
+ potato:{
+  issue:'Possible early blight-like leaf spots',
+  confidence:74,
+  severity:'Medium',
+  nextSteps:['Inspect older lower leaves for spots with ring-like markings and check whether nearby plants are affected.','Note recent rain and watering, and avoid handling wet foliage where practical.','Confirm the cause with a local agriculture expert before choosing a treatment.']
+ },
+ wheat:{
+  issue:'Possible rust-like leaf symptoms',
+  confidence:67,
+  severity:'Medium',
+  nextSteps:['Check both sides of several leaves for orange-brown raised pustules and note whether they are spreading.','Record the crop stage and take clear photos of affected and healthy leaves for comparison.','Consult a local agriculture expert before using a fungicide or changing field practices.']
+ },
+ other:{
+  issue:'Possible leaf stress or spot pattern',
+  confidence:52,
+  severity:'Low',
+  nextSteps:['Compare affected leaves with healthy plants and note how many plants show similar changes.','Check both leaf sides and record recent weather, watering, and farm inputs.','Treat this demo result as a prompt for closer inspection, not a diagnosis.']
+ }
+};
+
+// Implement this interface with a server-backed provider when a real vision API is configured.
+// Keep provider credentials on the server; the demo provider never sends the selected image anywhere.
+export const demoCropAnalysisProvider:CropAnalysisProvider={
+ async analyze({cropName}){
+  await new Promise<void>(resolve=>setTimeout(resolve,850));
+  const normalized=cropName.trim().toLowerCase();
+  const key=normalized.includes('rice')||normalized.includes('paddy')?'rice':normalized.includes('tomato')?'tomato':normalized.includes('potato')?'potato':normalized.includes('wheat')?'wheat':'other';
+  const result=cropDemoResults[key];
+  return {...result,id:crypto.randomUUID(),cropName:cropName.trim()||'Unspecified crop',createdAt:new Date().toISOString(),preliminary:true,nextSteps:[...result.nextSteps]};
+ }
+};
+
+export const demoAdapters={
+ cropAnalysis:demoCropAnalysisProvider,
  answer(question:string) {
   const q=question.toLowerCase();
    if(q.includes('thrips'))return 'To check for thrips, tap a flower or young leaf over white paper and look for tiny, slender insects. Silvery streaks and small dark specks can be clues, but other problems can look similar. Inspect several plants and ask your local agriculture officer before choosing a treatment.';
