@@ -120,7 +120,7 @@ const replyText:Record<ReplyLanguage,Record<AssistantTopic,string>>={
   'water-saving':'To use less water, check soil moisture before irrigating, fix leaks, and water near the root zone. Drip irrigation, mulch, and leveling can help where suitable. Adjust for soil, crop stage, and recent rain; local conditions vary.',
   watering:'Check soil about 5–7 cm below the surface before watering. If it is still moist, wait; when watering is needed, target the root zone and use the cooler part of the day. Soil type, crop stage, and recent rain all matter, so avoid relying on a fixed schedule alone.',
   pests:'First identify the pest and how widely it is present. Inspect several plants and the undersides of leaves, and keep a clear photo or sample. Do not spray until the pest is identified; follow the product label and ask a local agriculture officer about suitable control.',
-  'leaf-symptoms':'Leaf changes can have several causes, including water stress, pests, nutrient issues, or disease. Note which leaves are affected, how quickly it is spreading, and recent weather or farm inputs. Check multiple plants and confirm the cause locally before treatment.',
+  'leaf-symptoms':'Yellow leaves can have several causes, including too much or too little water, poor drainage, nutrient imbalance, pests, or disease. Note whether older or newer leaves are affected, inspect leaf undersides, and check soil moisture. Avoid adding fertilizer or spraying until the cause is clearer; seek local advice if it spreads.',
   general:'I can offer general starting points. Note the crop and growth stage, how many plants are affected, and what changed recently (weather, irrigation, or inputs). For fertilizer or treatment decisions, check local conditions with an agriculture officer or KVK. This demo is not guaranteed advice.'
  },
  hi:{
@@ -130,7 +130,7 @@ const replyText:Record<ReplyLanguage,Record<AssistantTopic,string>>={
   'water-saving':'पानी बचाने के लिए सिंचाई से पहले मिट्टी की नमी जांचें, रिसाव ठीक करें और जड़ों के पास पानी दें। जहां उपयुक्त हो, ड्रिप सिंचाई, मल्च और खेत को समतल करना मदद कर सकता है। मिट्टी, फसल की अवस्था और हाल की बारिश के अनुसार तरीका बदलें।',
   watering:'पानी देने से पहले मिट्टी में लगभग 5–7 सेमी नीचे नमी जांचें। मिट्टी नम हो तो रुकें; जरूरत होने पर जड़ों के पास और ठंडे समय में पानी दें। मिट्टी, फसल की अवस्था और हाल की बारिश देखें—केवल तय समय-सारणी पर निर्भर न रहें।',
   pests:'पहले कीट की पहचान करें और देखें कि कितने पौधों पर है। कई पौधों तथा पत्तियों के नीचे जांच करें और साफ फोटो या नमूना रखें। कीट की पहचान से पहले छिड़काव न करें; दवा के लेबल का पालन करें और स्थानीय कृषि अधिकारी से सही उपाय पूछें।',
-  'leaf-symptoms':'पत्तियों में बदलाव के कई कारण हो सकते हैं—पानी का तनाव, कीट, पोषक तत्व या रोग। देखें कौन-सी पत्तियां प्रभावित हैं, समस्या कितनी तेजी से फैल रही है और मौसम या खेत में क्या बदलाव हुआ। इलाज से पहले कई पौधों की जांच करें और स्थानीय सलाह लें।',
+  'leaf-symptoms':'पत्तियों का पीला होना अधिक या कम पानी, जल निकास की समस्या, पोषक तत्वों का असंतुलन, कीट या रोग से हो सकता है। देखें कि पुरानी या नई पत्तियां प्रभावित हैं, पत्तियों के नीचे कीट जांचें और मिट्टी की नमी देखें। कारण स्पष्ट होने से पहले खाद या दवा न डालें; समस्या फैलने पर स्थानीय सलाह लें।',
   general:'मैं सामान्य शुरुआती जानकारी दे सकता हूँ। फसल और उसकी अवस्था, कितने पौधे प्रभावित हैं, और हाल में मौसम, सिंचाई या खाद में क्या बदलाव हुआ—यह लिखें। खाद या उपचार के फैसले से पहले कृषि अधिकारी या KVK से स्थानीय सलाह लें। यह डेमो है, पक्की सलाह नहीं।'
  },
  or:{
@@ -140,7 +140,7 @@ const replyText:Record<ReplyLanguage,Record<AssistantTopic,string>>={
   'water-saving':'ପାଣି ବଞ୍ଚାଇବାକୁ ସେଚନ ପୂର୍ବରୁ ମାଟିର ଆର୍ଦ୍ରତା ଯାଞ୍ଚ କରନ୍ତୁ, ପାଇପର ଲିକ୍ ଠିକ୍ କରନ୍ତୁ ଏବଂ ମୂଳ ପାଖରେ ପାଣି ଦିଅନ୍ତୁ। ଉପଯୁକ୍ତ ହେଲେ ଡ୍ରିପ୍ ସେଚନ, ମଲ୍ଚ ଓ ଜମି ସମତଳ କରିବା ସାହାଯ୍ୟ କରିପାରେ। ମାଟି, ଫସଲର ଅବସ୍ଥା ଓ ବର୍ଷା ଅନୁସାରେ ବଦଳ କରନ୍ତୁ।',
   watering:'ପାଣି ଦେବା ପୂର୍ବରୁ ମାଟିର ୫–୭ ସେମି ତଳେ ଆର୍ଦ୍ରତା ଯାଞ୍ଚ କରନ୍ତୁ। ମାଟି ଓଦା ଥିଲେ ଅପେକ୍ଷା କରନ୍ତୁ; ଆବଶ୍ୟକ ହେଲେ ମୂଳ ପାଖରେ ଓ ଦିନର ଥଣ୍ଡା ସମୟରେ ପାଣି ଦିଅନ୍ତୁ। ମାଟି, ଫସଲର ଅବସ୍ଥା ଓ ସମ୍ପ୍ରତି ବର୍ଷାକୁ ଧ୍ୟାନ ଦିଅନ୍ତୁ।',
   pests:'ପ୍ରଥମେ ପୋକକୁ ଚିହ୍ନଟ କରନ୍ତୁ ଏବଂ କେତେ ଗଛରେ ଅଛି ଦେଖନ୍ତୁ। ଅନେକ ଗଛ ଓ ପତ୍ରର ତଳ ଭାଗ ଯାଞ୍ଚ କରି ସ୍ପଷ୍ଟ ଫଟୋ କିମ୍ବା ନମୁନା ରଖନ୍ତୁ। ପୋକ ଚିହ୍ନଟ ପୂର୍ବରୁ ଔଷଧ ଛିଞ୍ଚନ୍ତୁ ନାହିଁ; ଲେବଲ୍ ମାନନ୍ତୁ ଓ ସ୍ଥାନୀୟ କୃଷି ଅଧିକାରୀଙ୍କୁ ପଚାରନ୍ତୁ।',
-  'leaf-symptoms':'ପତ୍ରର ପରିବର୍ତ୍ତନର କାରଣ ପାଣି ଅଭାବ, ପୋକ, ପୋଷକ ଅସନ୍ତୁଳନ କିମ୍ବା ରୋଗ ହୋଇପାରେ। କେଉଁ ପତ୍ର ପ୍ରଭାବିତ, ସମସ୍ୟା କେତେ ଶୀଘ୍ର ବଢ଼ୁଛି ଓ ପାଣିପାଗ କିମ୍ବା ଚାଷରେ କଣ ବଦଳିଛି ଲେଖନ୍ତୁ। ଚିକିତ୍ସା ପୂର୍ବରୁ ସ୍ଥାନୀୟ ପରାମର୍ଶ ନିଅନ୍ତୁ।',
+  'leaf-symptoms':'ପତ୍ର ହଳଦିଆ ହେବାର କାରଣ ଅଧିକ କିମ୍ବା କମ୍ ପାଣି, ନିଷ୍କାସନ ସମସ୍ୟା, ପୋଷକ ଅସନ୍ତୁଳନ, ପୋକ କିମ୍ବା ରୋଗ ହୋଇପାରେ। ପୁରୁଣା କି ନୂଆ ପତ୍ର ପ୍ରଭାବିତ ଦେଖନ୍ତୁ, ପତ୍ର ତଳେ ପୋକ ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ମାଟିର ଆର୍ଦ୍ରତା ଦେଖନ୍ତୁ। କାରଣ ସ୍ପଷ୍ଟ ନହେବା ପର୍ଯ୍ୟନ୍ତ ସାର କିମ୍ବା ଔଷଧ ଦିଅନ୍ତୁ ନାହିଁ; ସମସ୍ୟା ବଢ଼ିଲେ ସ୍ଥାନୀୟ ପରାମର୍ଶ ନିଅନ୍ତୁ।',
   general:'ମୁଁ ସାଧାରଣ ସୂଚନା ଦେଇପାରିବି। ଫସଲ ଓ ଏହାର ଅବସ୍ଥା, କେତେ ଗଛ ପ୍ରଭାବିତ, ଏବଂ ପାଣିପାଗ, ସେଚନ କିମ୍ବା ସାରରେ କଣ ବଦଳିଛି ଲେଖନ୍ତୁ। ସାର କିମ୍ବା ଚିକିତ୍ସା ନିଷ୍ପତ୍ତି ପୂର୍ବରୁ କୃଷି ଅଧିକାରୀ/KVKଙ୍କୁ ପଚାରନ୍ତୁ। ଏହା ଡେମୋ ସୂଚନା, ନିଶ୍ଚିତ ପରାମର୍ଶ ନୁହେଁ।'
  }
 };
@@ -164,7 +164,7 @@ function classifyAssistantTopic(question:string):AssistantTopic{
  if(fertilizer)return 'fertilizer';
  const tomato=hasAny(q,['tomato','ଟମାଟୋ','टमाटर']);
  const yellowing=hasAny(q,['yellow','ହଳଦିଆ','ହଳଦୀଆ','पीला','पीली','पीले','पील']);
- const leaf=hasAny(q,['leaf','leaves','पत्ती','पत्ते','पत्तियों','ପତ୍ର']);
+ const leaf=hasAny(q,['leaf','leaves','पत्त','ପତ୍ର']);
  if(tomato&&yellowing)return 'tomato-yellowing';
  if(yellowing&&leaf)return 'leaf-symptoms';
  const water=hasAny(q,['water','irrigat','पानी','सिंचाई','ଜଳ','ପାଣି','ସେଚନ']);

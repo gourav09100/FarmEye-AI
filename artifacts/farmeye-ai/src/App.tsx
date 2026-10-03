@@ -189,10 +189,10 @@ function Assistant({farm,updateFarm}:{farm:FarmData;updateFarm:(fn:(c:FarmData)=
  };
 
  const examples=[
-  'Which fertilizer is suitable for rice?',
-  'Why are my tomato leaves turning yellow?',
+  'Why are my leaves turning yellow?',
   'When should I water my crop?',
-  'How can I reduce water usage?',
+  'Which fertilizer should I use?',
+  'How can I save water?',
  ];
  const retry=()=>{
   if(pendingQuestion&&!sendingRef.current)void requestReply(pendingQuestion);
