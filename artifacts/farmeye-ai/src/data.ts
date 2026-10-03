@@ -192,6 +192,7 @@ export const demoAdapters={
  cropAnalysis:demoCropAnalysisProvider,
  assistant:demoFarmingAssistantProvider
 };
+
 const outlook=[
  {icon:'sun',high:31,low:19,rain:35,label:'Warm, chance of showers'},
  {icon:'cloud',high:29,low:18,rain:55,label:'Clouds building'},

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent,
 import { Link, Route, Switch, useLocation } from 'wouter';
 import { Activity, ArrowRight, BarChart3, Bell, Camera, Check, ChevronDown, CircleHelp, Cloud, CloudRain, Droplets, FileText, Home, ImagePlus, Leaf, MapPin, Menu, Mic, Plus, Sprout, Sun, Trash2, Upload, Wallet, Wind, X } from 'lucide-react';
 import { demoAdapters, readFarm, sampleWeather, writeFarm, type Analysis, type AssistantLanguage, type AssistantRequest, type Crop, type Expense, type FarmData, type ChatMessage } from './data';
+import WeatherIntelligence from './weather/WeatherIntelligence';
 import './index.css';
 
 const navItems=[{href:'/dashboard',label:'Today',icon:Home},{href:'/crop-doctor',label:'Crop doctor',icon:Camera},{href:'/assistant',label:'Ask FarmEye',icon:CircleHelp},{href:'/weather',label:'Weather',icon:Cloud},{href:'/expenses',label:'Expenses',icon:Wallet},{href:'/history',label:'Field history',icon:FileText}];
@@ -291,6 +292,11 @@ type SpeechRecognitionEvent=Event&{results:ArrayLike<ArrayLike<{transcript:strin
 type SpeechRecognitionErrorEvent=Event&{error:string};
 
 function Weather(){
+ const [location]=useState(()=>readFarm().farmer.location);
+ return <WeatherIntelligence location={location}/>;
+}
+
+function LegacyWeather(){
  const [unit,setUnit]=useState<'C'|'F'>('C');
  const [refresh,setRefresh]=useState(false);
  const [selectedDay,setSelectedDay]=useState('Today');
