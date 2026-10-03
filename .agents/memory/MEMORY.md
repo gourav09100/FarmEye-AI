@@ -1,0 +1,1 @@
+- [Headless chat smoke tests](headless-chat-tests.md) — after a browser reload, wait for the new React page to hydrate before interacting or asserting.

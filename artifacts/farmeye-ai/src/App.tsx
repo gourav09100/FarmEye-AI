@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import { Activity, ArrowRight, BarChart3, Bell, Camera, Check, ChevronDown, CircleHelp, Cloud, CloudRain, Droplets, FileText, Home, ImagePlus, Leaf, MapPin, Menu, Mic, Plus, Sprout, Sun, Trash2, Upload, Wallet, Wind, X } from 'lucide-react';
-import { demoAdapters, readFarm, sampleWeather, writeFarm, type Analysis, type Crop, type Expense, type FarmData, type ChatMessage } from './data';
+import { demoAdapters, readFarm, sampleWeather, writeFarm, type Analysis, type AssistantLanguage, type AssistantRequest, type Crop, type Expense, type FarmData, type ChatMessage } from './data';
 import './index.css';
 
 const navItems=[{href:'/dashboard',label:'Today',icon:Home},{href:'/crop-doctor',label:'Crop doctor',icon:Camera},{href:'/assistant',label:'Ask FarmEye',icon:CircleHelp},{href:'/weather',label:'Weather',icon:Cloud},{href:'/expenses',label:'Expenses',icon:Wallet},{href:'/history',label:'Field history',icon:FileText}];
@@ -74,18 +74,219 @@ function CropDoctor({farm,updateFarm,notify}:{farm:FarmData;updateFarm:(fn:(c:Fa
 }
 function Assistant({farm,updateFarm}:{farm:FarmData;updateFarm:(fn:(c:FarmData)=>FarmData)=>void}){
  const [text,setText]=useState('');
+ const [language,setLanguage]=useState<AssistantLanguage>('auto');
  const [listening,setListening]=useState(false);
  const [speechNote,setSpeechNote]=useState('');
+ const [inputError,setInputError]=useState('');
+ const [chatError,setChatError]=useState('');
+ const [pendingQuestion,setPendingQuestion]=useState<AssistantRequest|null>(null);
  const [sending,setSending]=useState(false);
  const bottom=useRef<HTMLDivElement>(null);
- useEffect(()=>{bottom.current?.scrollIntoView({behavior:'smooth'})},[farm.chat.length,sending]);
- const send=(value=text)=>{const q=value.trim();if(!q||sending)return;const user:ChatMessage={id:uid(),role:'user',text:q,createdAt:new Date().toISOString()};setText('');setSending(true);updateFarm(d=>({...d,chat:[...d.chat,user]}));window.setTimeout(()=>{const answer:ChatMessage={id:uid(),role:'assistant',text:demoAdapters.answer(q),createdAt:new Date().toISOString()};updateFarm(d=>({...d,chat:[...d.chat,answer]}));setSending(false)},550)};
- const mic=()=>{const w=window as Window & {webkitSpeechRecognition?:new()=>SpeechRecognition;SpeechRecognition?:new()=>SpeechRecognition};const Rec=w.SpeechRecognition||w.webkitSpeechRecognition;if(!Rec){setSpeechNote('Voice input is not supported in this browser. You can type your question instead.');return}try{const recognition=new Rec();recognition.lang='en-IN';recognition.interimResults=false;recognition.onstart=()=>{setListening(true);setSpeechNote('Listening. Speak your question clearly.')};recognition.onresult=e=>{const heard=e.results[0]?.[0]?.transcript||'';setText(prev=>prev?`${prev} ${heard}`:heard);setSpeechNote('Voice note added to your question.')};recognition.onerror=e=>setSpeechNote(e.error==='not-allowed'?'Microphone permission was denied. Allow access in browser settings or type your question.':'Could not hear that clearly. Try again or type your question.');recognition.onend=()=>setListening(false);recognition.start()}catch{setListening(false);setSpeechNote('Microphone could not start. Check browser permission or type your question.')}}
- const reset=()=>updateFarm(d=>({...d,chat:[]}));
- const examples=['Why are my tomato leaves yellowing?','When should I irrigate after rain?','How do I check for thrips?'];
- return <><PageTitle eyebrow="Ask FarmEye · demo assistant" title="A practical question, answered." subtitle="Get a useful place to start. Replies are sample guidance, not connected AI or a substitute for local expertise." action={farm.chat.length>0?<Button variant="outline" onClick={reset}><Trash2 size={15}/>Clear conversation</Button>:null}/><div className="max-w-4xl mx-auto grid lg:grid-cols-[1fr_245px] gap-5 items-start"><Card className="!p-0 overflow-hidden"><div className="p-4 sm:px-6 border-b border-[#eceae0] flex items-center gap-3"><div className="w-10 h-10 bg-[#e7ecd9] rounded-xl flex items-center justify-center text-[#59784c]"><Sprout size={20}/></div><div><div className="font-bold text-sm">FarmEye field helper</div><div className="flex items-center gap-1.5 text-[11px] text-[#7c8676]"><span className="w-1.5 h-1.5 rounded-full bg-[#d3a35b]"/>Demo replies · not connected to AI</div></div></div><div className="min-h-[310px] max-h-[55vh] overflow-y-auto p-4 sm:p-6 space-y-4">{farm.chat.length===0?<div className="py-8"><div className="text-center"><div className="serif text-2xl">What’s happening in your field?</div><p className="text-sm text-[#82877b] mt-2">Try a practical question about crops, irrigation, or pests.</p></div><div className="grid sm:grid-cols-3 gap-2 mt-7">{examples.map(example=><button key={example} onClick={()=>send(example)} className="text-left text-xs text-[#53684e] bg-[#f0f2e8] hover:bg-[#e8ecdc] border border-[#e2e5d7] rounded-xl p-3 transition-colors">{example}<ArrowRight size={13} className="mt-2"/></button>)}</div></div>:farm.chat.map(m=><div key={m.id} className={`flex ${m.role==='user'?'justify-end':'justify-start'}`}><div className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role==='user'?'bg-[#315c3e] text-white rounded-br-sm':'bg-[#f0f1e8] text-[#40513e] rounded-bl-sm'}`}><p>{m.text}</p><div className={`text-[10px] mt-2 ${m.role==='user'?'text-white/60':'text-[#88907f]'}`}>{new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit'}).format(new Date(m.createdAt))}</div></div></div>)}{sending&&<div className="flex items-center gap-2 text-xs text-[#788274]"><span className="flex gap-1"><i className="w-1.5 h-1.5 rounded-full bg-[#7c9464] animate-bounce"/><i className="w-1.5 h-1.5 rounded-full bg-[#7c9464] animate-bounce [animation-delay:120ms]"/><i className="w-1.5 h-1.5 rounded-full bg-[#7c9464] animate-bounce [animation-delay:240ms]"/></span>Thinking through the question…</div>}<div ref={bottom}/></div><form onSubmit={e=>{e.preventDefault();send()}} className="border-t border-[#eceae0] p-3 sm:p-4"><div className="flex gap-2 items-end"><label className="sr-only" htmlFor="chat-question">Ask a farming question</label><textarea id="chat-question" data-testid="input-chat-question" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}} placeholder="Ask about a crop, symptom, or farm task…" rows={1} className="field flex-1 min-h-[46px] max-h-32 resize-y py-3"/><button type="button" onClick={mic} aria-label={listening?'Listening':'Use voice input'} className={`w-11 h-11 rounded-xl border flex items-center justify-center ${listening?'bg-[#e8e6d5] border-[#7f9360] text-[#527244]':'border-[#d9dacd] text-[#71816b] hover:bg-[#eff0e7]'}`}><Mic size={18}/></button><Button type="submit" disabled={!text.trim()||sending} className="h-11 px-4">Send <ArrowRight size={15}/></Button></div>{speechNote&&<div role="status" className="text-xs text-[#796d50] mt-2">{speechNote}</div>}</form></Card><aside className="space-y-4"><Card className="!bg-[#e9eddf] !border-[#dbe0cf]"><Eyebrow>Made for the field</Eyebrow><p className="font-semibold mt-2">Clear, useful starting points.</p><p className="text-xs text-[#6f7968] mt-2 leading-relaxed">Demo replies are generated locally from sample guidance. No questions leave this device.</p></Card><Card><Eyebrow>Good details to include</Eyebrow><ul className="mt-3 space-y-3 text-xs text-[#667061]"><li className="flex gap-2"><span className="text-[#79915d]">01</span>Crop and its growth stage</li><li className="flex gap-2"><span className="text-[#79915d]">02</span>When the issue first appeared</li><li className="flex gap-2"><span className="text-[#79915d]">03</span>Recent weather or farm inputs</li></ul></Card></aside></div></>
+ const sendingRef=useRef(false);
+ const requestId=useRef(0);
+ const recognitionRef=useRef<SpeechRecognitionLike|null>(null);
+ useEffect(()=>{
+  if(farm.chat.length===0&&!sending&&!chatError)return;
+  bottom.current?.scrollIntoView({behavior:'smooth',block:'end'});
+ },[farm.chat.length,sending,chatError]);
+
+ const requestReply=async(request:AssistantRequest)=>{
+  const activeRequest=++requestId.current;
+  sendingRef.current=true;
+  setSending(true);
+  setChatError('');
+  try{
+   const reply=await demoAdapters.assistant.respond(request);
+   if(activeRequest!==requestId.current)return;
+   const answer:ChatMessage={id:uid(),role:'assistant',text:reply,createdAt:new Date().toISOString()};
+   updateFarm(data=>({...data,chat:[...data.chat,answer]}));
+   setPendingQuestion(null);
+  }catch{
+   if(activeRequest!==requestId.current)return;
+   setPendingQuestion(request);
+   setChatError('The demo could not prepare a reply. Your question is still here; try again, or rephrase it.');
+  }finally{
+   if(activeRequest===requestId.current){
+    sendingRef.current=false;
+    setSending(false);
+   }
+  }
+ };
+
+ const send=(value=text)=>{
+  const question=value.trim();
+  if(sendingRef.current)return;
+  if(!question){
+   setInputError('Type a farming question before sending.');
+   return;
+  }
+  setInputError('');
+  setChatError('');
+  setPendingQuestion(null);
+  setText('');
+  const user:ChatMessage={id:uid(),role:'user',text:question,createdAt:new Date().toISOString()};
+  updateFarm(data=>({...data,chat:[...data.chat,user]}));
+  void requestReply({question,language});
+ };
+
+ const mic=()=>{
+  if(listening){
+   recognitionRef.current?.stop();
+   return;
+  }
+  const w=window as Window&{webkitSpeechRecognition?:new()=>SpeechRecognitionLike;SpeechRecognition?:new()=>SpeechRecognitionLike};
+  const Recognition=w.SpeechRecognition||w.webkitSpeechRecognition;
+  if(!Recognition){
+   setSpeechNote('Voice input is not supported in this browser. You can type your question instead.');
+   return;
+  }
+  try{
+   const recognition=new Recognition();
+   recognitionRef.current=recognition;
+   recognition.lang=language==='hi'?'hi-IN':language==='or'?'or-IN':'en-IN';
+   recognition.interimResults=false;
+   recognition.onstart=()=>{
+    setListening(true);
+    setSpeechNote('Listening. Speak your question clearly.');
+   };
+   recognition.onresult=event=>{
+    const heard=event.results[0]?.[0]?.transcript.trim()||'';
+    if(!heard){
+     setSpeechNote('No words were detected. Try again or type your question.');
+     return;
+    }
+    setText(previous=>previous?`${previous} ${heard}`:heard);
+    setInputError('');
+    setSpeechNote('Voice input added to your question. Review it, then tap Send.');
+   };
+   recognition.onerror=event=>{
+    setSpeechNote(event.error==='not-allowed'
+     ?'Microphone permission was denied. Allow access in browser settings or type your question.'
+     :'Could not hear that clearly. Try again or type your question.');
+   };
+   recognition.onend=()=>{
+    setListening(false);
+    recognitionRef.current=null;
+   };
+   recognition.start();
+  }catch{
+   setListening(false);
+   recognitionRef.current=null;
+   setSpeechNote('Microphone could not start. Check browser permission or type your question.');
+  }
+ };
+
+ const reset=()=>{
+  requestId.current++;
+  sendingRef.current=false;
+  recognitionRef.current?.stop();
+  recognitionRef.current=null;
+  setListening(false);
+  setSending(false);
+  setChatError('');
+  setPendingQuestion(null);
+  updateFarm(data=>({...data,chat:[]}));
+ };
+
+ const examples=[
+  'Which fertilizer is suitable for rice?',
+  'Why are my tomato leaves turning yellow?',
+  'When should I water my crop?',
+  'How can I reduce water usage?',
+ ];
+ const retry=()=>{
+  if(pendingQuestion&&!sendingRef.current)void requestReply(pendingQuestion);
+ };
+
+ return <>
+  <PageTitle eyebrow="Ask FarmEye · demo assistant" title="A practical question, answered." subtitle="Ask about crops, soil, pests, or irrigation. Demo guidance is not guaranteed advice; verify important decisions with a local expert." action={farm.chat.length>0?<Button variant="outline" onClick={reset} disabled={sending}><Trash2 size={15}/>Clear conversation</Button>:null}/>
+  <div className="max-w-4xl mx-auto grid lg:grid-cols-[1fr_245px] gap-5 items-start">
+   <Card className="!p-0 overflow-hidden">
+    <div className="p-4 sm:px-6 border-b border-[#eceae0] flex flex-wrap items-center justify-between gap-3">
+     <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-[#e7ecd9] rounded-xl flex items-center justify-center text-[#59784c]"><Sprout size={20}/></div>
+      <div>
+       <div className="font-bold text-sm">FarmEye field helper</div>
+       <div className="flex items-center gap-1.5 text-[11px] text-[#7c8676]"><span className="w-1.5 h-1.5 rounded-full bg-[#d3a35b]"/>Demo replies · not connected to AI</div>
+      </div>
+     </div>
+     <label className="flex items-center gap-2 text-[11px] font-semibold text-[#6e7968]">
+      Reply language
+      <select aria-label="Reply language" data-testid="select-chat-language" value={language} onChange={event=>setLanguage(event.target.value as AssistantLanguage)} className="field !w-auto !py-2 !text-xs">
+       <option value="auto">Match question</option>
+       <option value="en">English</option>
+       <option value="hi">हिन्दी</option>
+       <option value="or">ଓଡ଼ିଆ</option>
+      </select>
+     </label>
+    </div>
+    <div className="max-h-[55vh] min-h-[310px] overflow-y-auto p-4 sm:p-6 space-y-4" data-testid="chat-messages" role="log" aria-label="Chat messages" aria-live="polite">
+     {farm.chat.length===0
+      ?<div className="py-7">
+        <div className="text-center">
+         <div className="serif text-2xl">What’s happening in your field?</div>
+         <p className="text-sm text-[#82877b] mt-2">Choose an example or ask a question in English, Hindi, or Odia.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-2 mt-6">
+         {examples.map((example,index)=><button key={example} type="button" data-testid={`button-quick-question-${index+1}`} onClick={()=>send(example)} disabled={sending} className="min-h-[76px] text-left text-xs sm:text-sm text-[#53684e] bg-[#f0f2e8] hover:bg-[#e8ecdc] border border-[#e2e5d7] rounded-xl p-3 transition-colors disabled:opacity-60">
+          <span>{example}</span><ArrowRight size={13} className="mt-2"/>
+         </button>)}
+        </div>
+       </div>
+      :farm.chat.map(message=><div key={message.id} data-testid={`${message.role}-message-${message.id}`} className={`flex ${message.role==='user'?'justify-end':'justify-start'}`}>
+        <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role==='user'?'bg-[#315c3e] text-white rounded-br-sm':'bg-[#f0f1e8] text-[#40513e] rounded-bl-sm'}`}>
+         <p className="whitespace-pre-wrap">{message.text}</p>
+         <div className={`text-[10px] mt-2 ${message.role==='user'?'text-white/60':'text-[#88907f]'}`}>{message.role==='user'?'You':'FarmEye'} · {new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit'}).format(new Date(message.createdAt))}</div>
+        </div>
+       </div>)}
+     {sending&&<div role="status" aria-label="FarmEye is typing" className="flex items-center gap-2 text-xs text-[#788274]">
+      <span className="flex gap-1"><i className="w-1.5 h-1.5 rounded-full bg-[#7c9464] animate-bounce"/><i className="w-1.5 h-1.5 rounded-full bg-[#7c9464] animate-bounce [animation-delay:120ms]"/><i className="w-1.5 h-1.5 rounded-full bg-[#7c9464] animate-bounce [animation-delay:240ms]"/></span>
+      FarmEye is thinking…
+     </div>}
+     {chatError&&<div role="alert" data-testid="chat-error" className="rounded-xl border border-[#efd5ca] bg-[#fbefeb] p-3 text-xs text-[#8e4138]">
+      <p>{chatError}</p>
+      <Button onClick={retry} disabled={sending||!pendingQuestion} variant="outline" className="!py-2 !px-3 mt-2 !text-xs">Try again</Button>
+     </div>}
+     <div ref={bottom}/>
+    </div>
+    <div className="px-3 sm:px-5 py-2.5 border-t border-[#efede4] bg-[#fbfaf6] text-[10px] leading-relaxed text-[#827a68]">
+     General demo information only—not a guaranteed diagnosis or treatment plan. Check local conditions and confirm important decisions with a qualified agricultural expert or KVK.
+    </div>
+    <form onSubmit={event=>{event.preventDefault();send()}} className="border-t border-[#eceae0] p-3 sm:p-4">
+     <div className="flex gap-2 items-end">
+      <label className="sr-only" htmlFor="chat-question">Ask a farming question</label>
+      <textarea id="chat-question" data-testid="input-chat-question" value={text} onChange={event=>{setText(event.target.value);if(event.target.value.trim())setInputError('')}} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}}} placeholder="Ask about a crop, symptom, or farm task…" rows={1} aria-invalid={Boolean(inputError)} aria-describedby={inputError?'chat-input-error':undefined} className="field flex-1 min-h-[46px] max-h-32 resize-y py-3"/>
+      <button type="button" onClick={mic} disabled={sending} aria-label={listening?'Stop voice input':'Use voice input'} data-testid="button-chat-mic" className={`shrink-0 w-11 h-11 rounded-xl border flex items-center justify-center disabled:opacity-50 ${listening?'bg-[#e8e6d5] border-[#7f9360] text-[#527244]':'border-[#d9dacd] text-[#71816b] hover:bg-[#eff0e7]'}`}><Mic size={18}/></button>
+      <Button type="submit" disabled={!text.trim()||sending} className="h-11 px-3 sm:px-4 shrink-0" data-testid="button-chat-send">Send <ArrowRight size={15}/></Button>
+     </div>
+     {inputError&&<div id="chat-input-error" role="alert" className="text-xs text-[#a3483e] mt-2">{inputError}</div>}
+     {speechNote&&<div role="status" className="text-xs text-[#796d50] mt-2">{speechNote}</div>}
+    </form>
+   </Card>
+   <aside className="space-y-4">
+    <Card className="!bg-[#e9eddf] !border-[#dbe0cf]">
+     <Eyebrow>Made for the field</Eyebrow>
+     <p className="font-semibold mt-2">Clear, useful starting points.</p>
+     <p className="text-xs text-[#6f7968] mt-2 leading-relaxed">Replies use local demo guidance. Your questions stay on this device; no AI service or API key is configured.</p>
+    </Card>
+    <Card>
+     <Eyebrow>Good details to include</Eyebrow>
+     <ul className="mt-3 space-y-3 text-xs text-[#667061]"><li className="flex gap-2"><span className="text-[#79915d]">01</span>Crop and its growth stage</li><li className="flex gap-2"><span className="text-[#79915d]">02</span>When the issue first appeared</li><li className="flex gap-2"><span className="text-[#79915d]">03</span>Recent weather or farm inputs</li></ul>
+    </Card>
+   </aside>
+  </div>
+ </>
 }
-type SpeechRecognition= {lang:string;interimResults:boolean;onstart:(e:Event)=>void;onresult:(e:SpeechRecognitionEvent)=>void;onerror:(e:SpeechRecognitionErrorEvent)=>void;onend:(e:Event)=>void;start:()=>void};
+type SpeechRecognitionLike={
+ lang:string;
+ interimResults:boolean;
+ onstart:((event:Event)=>void)|null;
+ onresult:((event:SpeechRecognitionEvent)=>void)|null;
+ onerror:((event:SpeechRecognitionErrorEvent)=>void)|null;
+ onend:((event:Event)=>void)|null;
+ start:()=>void;
+ stop:()=>void;
+};
 type SpeechRecognitionEvent=Event&{results:ArrayLike<ArrayLike<{transcript:string}>>};
 type SpeechRecognitionErrorEvent=Event&{error:string};
 

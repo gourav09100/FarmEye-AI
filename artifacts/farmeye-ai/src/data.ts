@@ -4,6 +4,9 @@ export interface CropAnalysisProvider { analyze(request:CropAnalysisRequest):Pro
 export type Crop = { id:string; name:string; variety:string; plantedAt:string; area:string; status:string; image?:string; latestAnalysis?:Analysis };
 export type Expense = { id:string; category:string; description:string; amount:number; date:string };
 export type ChatMessage = { id:string; role:'user'|'assistant'; text:string; createdAt:string };
+export type AssistantLanguage = 'auto'|'en'|'hi'|'or';
+export type AssistantRequest = { question:string; language:AssistantLanguage };
+export interface FarmingAssistantProvider { respond(request:AssistantRequest):Promise<string> }
 export type FarmData = { farmer:{name:string;farm:string;location:string}; crops:Crop[]; expenses:Expense[]; reports:Analysis[]; chat:ChatMessage[] };
 const KEY='farmeye-demo-v1';
 const localDateString=(offset:number)=>{
@@ -106,19 +109,88 @@ export const demoCropAnalysisProvider:CropAnalysisProvider={
  }
 };
 
+type AssistantTopic='rice-fertilizer'|'fertilizer'|'tomato-yellowing'|'water-saving'|'watering'|'pests'|'leaf-symptoms'|'general';
+type ReplyLanguage=Exclude<AssistantLanguage,'auto'>;
+
+const replyText:Record<ReplyLanguage,Record<AssistantTopic,string>>={
+ en:{
+  'rice-fertilizer':'For rice, fertilizer needs depend on the soil, variety, and crop stage. Use a soil test or your local agriculture officer/KVK recommendation; do not guess a urea or DAP dose. Follow locally advised timing and split applications. This is general guidance, not a guaranteed recommendation.',
+  fertilizer:'Fertilizer needs depend on the crop, soil, and growth stage. Check a soil test and recent applications, then follow local agriculture or KVK guidance instead of guessing a dose. Too much fertilizer can harm crops and water.',
+  'tomato-yellowing':'Yellow tomato leaves can be linked to watering or drainage stress, nutrient imbalance, pests, or disease. Check whether older or newer leaves are affected, inspect leaf undersides, and feel the soil before watering. Avoid adding fertilizer or spraying until you have clearer evidence; ask a local crop expert if it spreads.',
+  'water-saving':'To use less water, check soil moisture before irrigating, fix leaks, and water near the root zone. Drip irrigation, mulch, and leveling can help where suitable. Adjust for soil, crop stage, and recent rain; local conditions vary.',
+  watering:'Check soil about 5–7 cm below the surface before watering. If it is still moist, wait; when watering is needed, target the root zone and use the cooler part of the day. Soil type, crop stage, and recent rain all matter, so avoid relying on a fixed schedule alone.',
+  pests:'First identify the pest and how widely it is present. Inspect several plants and the undersides of leaves, and keep a clear photo or sample. Do not spray until the pest is identified; follow the product label and ask a local agriculture officer about suitable control.',
+  'leaf-symptoms':'Leaf changes can have several causes, including water stress, pests, nutrient issues, or disease. Note which leaves are affected, how quickly it is spreading, and recent weather or farm inputs. Check multiple plants and confirm the cause locally before treatment.',
+  general:'I can offer general starting points. Note the crop and growth stage, how many plants are affected, and what changed recently (weather, irrigation, or inputs). For fertilizer or treatment decisions, check local conditions with an agriculture officer or KVK. This demo is not guaranteed advice.'
+ },
+ hi:{
+  'rice-fertilizer':'धान में खाद की जरूरत मिट्टी, किस्म और फसल की अवस्था पर निर्भर करती है। मिट्टी की जांच या स्थानीय कृषि अधिकारी/KVK की सलाह लें; यूरिया या DAP की मात्रा अनुमान से न डालें। खाद का समय और मात्रा स्थानीय सलाह के अनुसार रखें। यह सामान्य जानकारी है, पक्की सिफारिश नहीं।',
+  fertilizer:'खाद की जरूरत फसल, मिट्टी और बढ़वार की अवस्था पर निर्भर करती है। मिट्टी की जांच और पहले डाली गई खाद की जानकारी देखें, फिर कृषि अधिकारी या KVK की सलाह लें। बिना सलाह मात्रा का अनुमान न लगाएं।',
+  'tomato-yellowing':'टमाटर की पीली पत्तियों के कारण पानी या निकास की समस्या, पोषक तत्वों का असंतुलन, कीट या रोग हो सकते हैं। देखें कि पुरानी या नई पत्तियां प्रभावित हैं, पत्तियों के नीचे कीट जांचें और पानी देने से पहले मिट्टी देखें। कारण स्पष्ट होने से पहले खाद या दवा न डालें; समस्या फैलने पर स्थानीय विशेषज्ञ से पूछें।',
+  'water-saving':'पानी बचाने के लिए सिंचाई से पहले मिट्टी की नमी जांचें, रिसाव ठीक करें और जड़ों के पास पानी दें। जहां उपयुक्त हो, ड्रिप सिंचाई, मल्च और खेत को समतल करना मदद कर सकता है। मिट्टी, फसल की अवस्था और हाल की बारिश के अनुसार तरीका बदलें।',
+  watering:'पानी देने से पहले मिट्टी में लगभग 5–7 सेमी नीचे नमी जांचें। मिट्टी नम हो तो रुकें; जरूरत होने पर जड़ों के पास और ठंडे समय में पानी दें। मिट्टी, फसल की अवस्था और हाल की बारिश देखें—केवल तय समय-सारणी पर निर्भर न रहें।',
+  pests:'पहले कीट की पहचान करें और देखें कि कितने पौधों पर है। कई पौधों तथा पत्तियों के नीचे जांच करें और साफ फोटो या नमूना रखें। कीट की पहचान से पहले छिड़काव न करें; दवा के लेबल का पालन करें और स्थानीय कृषि अधिकारी से सही उपाय पूछें।',
+  'leaf-symptoms':'पत्तियों में बदलाव के कई कारण हो सकते हैं—पानी का तनाव, कीट, पोषक तत्व या रोग। देखें कौन-सी पत्तियां प्रभावित हैं, समस्या कितनी तेजी से फैल रही है और मौसम या खेत में क्या बदलाव हुआ। इलाज से पहले कई पौधों की जांच करें और स्थानीय सलाह लें।',
+  general:'मैं सामान्य शुरुआती जानकारी दे सकता हूँ। फसल और उसकी अवस्था, कितने पौधे प्रभावित हैं, और हाल में मौसम, सिंचाई या खाद में क्या बदलाव हुआ—यह लिखें। खाद या उपचार के फैसले से पहले कृषि अधिकारी या KVK से स्थानीय सलाह लें। यह डेमो है, पक्की सलाह नहीं।'
+ },
+ or:{
+  'rice-fertilizer':'ଧାନ ପାଇଁ ସାରର ଆବଶ୍ୟକତା ମାଟି, କିସମ ଓ ଫସଲର ଅବସ୍ଥା ଉପରେ ନିର୍ଭର କରେ। ମାଟି ପରୀକ୍ଷା କରନ୍ତୁ କିମ୍ବା ସ୍ଥାନୀୟ କୃଷି ଅଧିକାରୀ/KVKଙ୍କ ପରାମର୍ଶ ନିଅନ୍ତୁ; ଅନୁମାନରେ ୟୁରିଆ କିମ୍ବା DAP ଦିଅନ୍ତୁ ନାହିଁ। ଏହା ସାଧାରଣ ସୂଚନା, ନିଶ୍ଚିତ ସୁପାରିଶ ନୁହେଁ।',
+  fertilizer:'ସାରର ଆବଶ୍ୟକତା ଫସଲ, ମାଟି ଓ ବୃଦ୍ଧିର ଅବସ୍ଥା ଉପରେ ନିର୍ଭର କରେ। ମାଟି ପରୀକ୍ଷା ଓ ପୂର୍ବରୁ ଦିଆଯାଇଥିବା ସାରର ତଥ୍ୟ ଦେଖନ୍ତୁ; ଅନୁମାନରେ ମାତ୍ରା ନିର୍ଦ୍ଧାରଣ ନକରି ସ୍ଥାନୀୟ କୃଷି ଅଧିକାରୀ/KVKଙ୍କ ପରାମର୍ଶ ନିଅନ୍ତୁ।',
+  'tomato-yellowing':'ଟମାଟୋ ପତ୍ର ହଳଦିଆ ହେବାର କାରଣ ପାଣି କିମ୍ବା ନିଷ୍କାସନ ସମସ୍ୟା, ପୋଷକ ଅସନ୍ତୁଳନ, ପୋକ କିମ୍ବା ରୋଗ ହୋଇପାରେ। ପୁରୁଣା କି ନୂଆ ପତ୍ର ପ୍ରଭାବିତ ହୋଇଛି ଦେଖନ୍ତୁ, ପତ୍ର ତଳେ ପୋକ ଖୋଜନ୍ତୁ ଏବଂ ପାଣି ଦେବା ପୂର୍ବରୁ ମାଟି ଯାଞ୍ଚ କରନ୍ତୁ। କାରଣ ନଜାଣି ସାର କିମ୍ବା ଔଷଧ ଦିଅନ୍ତୁ ନାହିଁ; ସମସ୍ୟା ବଢ଼ିଲେ ସ୍ଥାନୀୟ ବିଶେଷଜ୍ଞଙ୍କୁ ପଚାରନ୍ତୁ।',
+  'water-saving':'ପାଣି ବଞ୍ଚାଇବାକୁ ସେଚନ ପୂର୍ବରୁ ମାଟିର ଆର୍ଦ୍ରତା ଯାଞ୍ଚ କରନ୍ତୁ, ପାଇପର ଲିକ୍ ଠିକ୍ କରନ୍ତୁ ଏବଂ ମୂଳ ପାଖରେ ପାଣି ଦିଅନ୍ତୁ। ଉପଯୁକ୍ତ ହେଲେ ଡ୍ରିପ୍ ସେଚନ, ମଲ୍ଚ ଓ ଜମି ସମତଳ କରିବା ସାହାଯ୍ୟ କରିପାରେ। ମାଟି, ଫସଲର ଅବସ୍ଥା ଓ ବର୍ଷା ଅନୁସାରେ ବଦଳ କରନ୍ତୁ।',
+  watering:'ପାଣି ଦେବା ପୂର୍ବରୁ ମାଟିର ୫–୭ ସେମି ତଳେ ଆର୍ଦ୍ରତା ଯାଞ୍ଚ କରନ୍ତୁ। ମାଟି ଓଦା ଥିଲେ ଅପେକ୍ଷା କରନ୍ତୁ; ଆବଶ୍ୟକ ହେଲେ ମୂଳ ପାଖରେ ଓ ଦିନର ଥଣ୍ଡା ସମୟରେ ପାଣି ଦିଅନ୍ତୁ। ମାଟି, ଫସଲର ଅବସ୍ଥା ଓ ସମ୍ପ୍ରତି ବର୍ଷାକୁ ଧ୍ୟାନ ଦିଅନ୍ତୁ।',
+  pests:'ପ୍ରଥମେ ପୋକକୁ ଚିହ୍ନଟ କରନ୍ତୁ ଏବଂ କେତେ ଗଛରେ ଅଛି ଦେଖନ୍ତୁ। ଅନେକ ଗଛ ଓ ପତ୍ରର ତଳ ଭାଗ ଯାଞ୍ଚ କରି ସ୍ପଷ୍ଟ ଫଟୋ କିମ୍ବା ନମୁନା ରଖନ୍ତୁ। ପୋକ ଚିହ୍ନଟ ପୂର୍ବରୁ ଔଷଧ ଛିଞ୍ଚନ୍ତୁ ନାହିଁ; ଲେବଲ୍ ମାନନ୍ତୁ ଓ ସ୍ଥାନୀୟ କୃଷି ଅଧିକାରୀଙ୍କୁ ପଚାରନ୍ତୁ।',
+  'leaf-symptoms':'ପତ୍ରର ପରିବର୍ତ୍ତନର କାରଣ ପାଣି ଅଭାବ, ପୋକ, ପୋଷକ ଅସନ୍ତୁଳନ କିମ୍ବା ରୋଗ ହୋଇପାରେ। କେଉଁ ପତ୍ର ପ୍ରଭାବିତ, ସମସ୍ୟା କେତେ ଶୀଘ୍ର ବଢ଼ୁଛି ଓ ପାଣିପାଗ କିମ୍ବା ଚାଷରେ କଣ ବଦଳିଛି ଲେଖନ୍ତୁ। ଚିକିତ୍ସା ପୂର୍ବରୁ ସ୍ଥାନୀୟ ପରାମର୍ଶ ନିଅନ୍ତୁ।',
+  general:'ମୁଁ ସାଧାରଣ ସୂଚନା ଦେଇପାରିବି। ଫସଲ ଓ ଏହାର ଅବସ୍ଥା, କେତେ ଗଛ ପ୍ରଭାବିତ, ଏବଂ ପାଣିପାଗ, ସେଚନ କିମ୍ବା ସାରରେ କଣ ବଦଳିଛି ଲେଖନ୍ତୁ। ସାର କିମ୍ବା ଚିକିତ୍ସା ନିଷ୍ପତ୍ତି ପୂର୍ବରୁ କୃଷି ଅଧିକାରୀ/KVKଙ୍କୁ ପଚାରନ୍ତୁ। ଏହା ଡେମୋ ସୂଚନା, ନିଶ୍ଚିତ ପରାମର୍ଶ ନୁହେଁ।'
+ }
+};
+
+const hasAny=(text:string,terms:string[])=>terms.some(term=>text.includes(term));
+
+function detectReplyLanguage(question:string,preferred:AssistantLanguage):ReplyLanguage{
+ if(preferred!=='auto')return preferred;
+ if(/[\u0B00-\u0B7F]/.test(question))return 'or';
+ if(/[\u0900-\u097F]/.test(question))return 'hi';
+ if(/\b(kemiti|kebe|kipari|mu|mora|chasa|dhan)\b/i.test(question))return 'or';
+ if(/\b(kya|kyun|kaise|kab|mera|meri|fasal|khet|khad|sinchai|paani)\b/i.test(question))return 'hi';
+ return 'en';
+}
+
+function classifyAssistantTopic(question:string):AssistantTopic{
+ const q=question.toLowerCase();
+ const fertilizer=hasAny(q,['fertiliz','manure','nutrient','urea','dap','খাদ','उर्वरक','खाद','ସାର','ଖତ']);
+ const rice=hasAny(q,['rice','paddy','धान','चावल','ଧାନ','ଚାଉଳ']);
+ if(fertilizer&&rice)return 'rice-fertilizer';
+ if(fertilizer)return 'fertilizer';
+ const tomato=hasAny(q,['tomato','ଟମାଟୋ','टमाटर']);
+ const yellowing=hasAny(q,['yellow','ହଳଦିଆ','ହଳଦୀଆ','पीला','पीली','पीले','पील']);
+ const leaf=hasAny(q,['leaf','leaves','पत्ती','पत्ते','पत्तियों','ପତ୍ର']);
+ if(tomato&&yellowing)return 'tomato-yellowing';
+ if(yellowing&&leaf)return 'leaf-symptoms';
+ const water=hasAny(q,['water','irrigat','पानी','सिंचाई','ଜଳ','ପାଣି','ସେଚନ']);
+ const saving=hasAny(q,['reduc','less','save','conserv','usage','saving','कम','बच','ସଞ୍ଚୟ','କମ୍','ବଞ୍ଚା']);
+ if(water&&saving)return 'water-saving';
+ if(water)return 'watering';
+ if(hasAny(q,['pest','insect','thrip','aphid','कीट','कीड़ा','कीड़े','ପୋକ','କୀଟ']))return 'pests';
+ if(leaf||hasAny(q,['spot','blight','rust','fung']))return 'leaf-symptoms';
+ return 'general';
+}
+
+// Replace this demo implementation with a server-backed provider when an AI API is configured.
+// Keep API credentials and any real model calls on the server; this provider makes no network requests.
+export const demoFarmingAssistantProvider:FarmingAssistantProvider={
+ async respond({question,language}){
+  if(!question.trim())throw new Error('A farming question is required.');
+  await new Promise<void>(resolve=>setTimeout(resolve,550));
+  const replyLanguage=detectReplyLanguage(question,language);
+  const topic=classifyAssistantTopic(question);
+  return replyText[replyLanguage][topic];
+ }
+};
+
 export const demoAdapters={
  cropAnalysis:demoCropAnalysisProvider,
- answer(question:string) {
-  const q=question.toLowerCase();
-   if(q.includes('thrips'))return 'To check for thrips, tap a flower or young leaf over white paper and look for tiny, slender insects. Silvery streaks and small dark specks can be clues, but other problems can look similar. Inspect several plants and ask your local agriculture officer before choosing a treatment.';
-  if(q.includes('spot')||q.includes('blight')||q.includes('fung'))return 'Leaf spots can have several causes, so a photo alone is not enough to confirm a disease. Check whether spots are spreading, inspect nearby plants, and note recent rain and watering. Keep foliage dry where practical and confirm with a local crop specialist before treatment.';
-  if(q.includes('yellow')||q.includes('leaf'))return 'Yellow leaves can have several causes. Note whether the older or newer leaves are affected, check both sides for pests, and feel the soil before watering. Recent rain, drainage, and fertilizer changes are useful clues; avoid adding nutrients until the cause is clearer.';
-  if(q.includes('after rain')||q.includes('after it rains')||q.includes('after a shower'))return 'After rain, do not irrigate by schedule alone. Check soil moisture about 5–7 cm below the surface and look for standing water or blocked drainage. Resume watering only when the crop and soil need it; field conditions vary across a plot.';
-   if(q.includes('water')||q.includes('irrigat'))return 'For a practical check, feel the soil 5–7 cm below the surface before irrigating. Water near the root zone in the cooler part of the day, and adjust for soil type, crop stage, and recent rain. This is general demo guidance; local conditions matter.';
-   if(q.includes('fertiliz')||q.includes('nutrient'))return 'Before changing fertilizer, note the crop stage and which leaves are affected, then review recent applications and irrigation. A soil test or local extension recommendation is safer than guessing a dose; needs depend on the field and crop stage.';
-   if(q.includes('pest')||q.includes('insect'))return 'First identify the insect and check how much of the crop is affected. Inspect several plants, including the underside of leaves, and preserve a clear photo or sample. Ask your local agriculture officer before applying any pesticide.';
-  return 'I can help think through this. Start by noting the crop stage, how many plants are affected, and what changed recently (weather, irrigation, or inputs). For a treatment decision, confirm with your local agriculture officer or KVK. This is a demo response, not connected AI advice.';
- }
+ assistant:demoFarmingAssistantProvider
 };
 const outlook=[
  {icon:'sun',high:31,low:19,rain:35,label:'Warm, chance of showers'},
